@@ -1,0 +1,260 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Copyright (C) 2002 Martin Willemoes Hansen <mwh@sysrq.dk>
+# Copyright (C) 2019 Dawid Gan <deveee@gmail.com>
+#
+# Jump 'n Bump is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# Jump 'n Bump is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+import sys
+import os
+import tempfile
+import shutil
+import gettext
+
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk, Gdk, GObject
+
+from PIL import Image, __version__ as PILLOW_VERSION
+
+RESOURCE_DIR = '%%DATADIR%%/jumpnbump'
+BINARY_DIR = '%%BINDIR%%'
+UNPACK_BIN = '%%UNPACKBIN%%'
+
+application = "jumpnbump-menu"
+gettext.install(application)
+
+
+def populate_treeview():
+    levels = []
+    add_levels(levels, RESOURCE_DIR)
+    add_levels(levels, os.path.expanduser("~/.jumpnbump/levels"))
+
+    levels = sorted(levels, key=lambda level: level[0])
+
+    COLUMN_LEVEL = 0
+    COLUMN_DIR = 1
+    store = Gtk.ListStore(GObject.TYPE_STRING, GObject.TYPE_STRING)
+
+    for level in levels:
+        iter = store.append()
+        store.set(iter, COLUMN_LEVEL, level[0], COLUMN_DIR, level[1])
+
+    treeview.set_model(store)
+
+    renderer = Gtk.CellRendererText()
+    treeview.append_column(Gtk.TreeViewColumn(
+        _('Level'), renderer, text=COLUMN_LEVEL))
+
+
+def add_levels(levels, dir):
+    try:
+        for file in os.listdir(dir):
+            if (file.endswith('.dat') or file.endswith('.DAT')):
+                levels.append((file, dir))
+    except OSError as err:
+        print("%s not found (%s)." % (dir,  str(err)))
+
+
+def standalone_mode(widget):
+    disable_enable_level(1)
+    disable_enable_server(0)
+    num_clients.set_sensitive(0)
+    nogore.set_sensitive(1)
+    noflies.set_sensitive(1)
+
+
+def client_mode(widget):
+    disable_enable_level(1)
+    disable_enable_server(1)
+    num_clients.set_sensitive(0)
+    nogore.set_sensitive(1)
+    noflies.set_sensitive(1)
+
+
+def server_mode(widget):
+    disable_enable_level(1)
+    disable_enable_server(0)
+    num_clients.set_sensitive(1)
+    nogore.set_sensitive(1)
+    noflies.set_sensitive(1)
+
+
+def disable_enable_server(setting):
+    server_entry.set_sensitive(setting)
+    player_num.set_sensitive(setting)
+
+
+def disable_enable_level(setting):
+    treeview.set_sensitive(setting)
+    mirror.set_sensitive(setting)
+    if (not setting):
+        mirror.set_active(setting)
+
+
+def level_changed(widget):
+    model, iter = treeview.get_selection().get_selected()
+    global choosen_level
+    choosen_level = '%s/%s' % (model.get_value(iter, 1),
+                               model.get_value(iter, 0))
+    unpackdir = None
+    try:
+        unpackdir = tempfile.mkdtemp("", "jumpnbump-menu-")
+        os.chdir(unpackdir)
+        os.spawnlp(os.P_WAIT, UNPACK_BIN,
+                   'unpack', choosen_level)
+        im = Image.open('level.pcx')
+        w, h = im.size
+        if PILLOW_VERSION >= "10.0.0":
+            resample_filter = Image.LANCZOS
+        else:
+            resample_filter = Image.ANTIALIAS
+        im.thumbnail([w/2, h/2], resample_filter)
+        im.save('level.png')
+        im.close()
+        image.set_from_file('level.png')
+    except Exception as err:
+        print(err)
+    finally:
+        if unpackdir != None:
+            shutil.rmtree(unpackdir)
+
+    image.show()
+
+
+def about(widget):
+    global about_dialog
+    if (not about_dialog.is_visible()):
+        about_dialog.show_all()
+
+
+def about_close(widget):
+    global about_dialog
+    about_dialog.hide()
+    
+def about_quit(widget, event):
+    global about_dialog
+    about_dialog.hide()
+    return True
+
+
+def run(widget):
+    if (standalone.get_active()):
+        execute(*get_level() + common_options())
+    elif (client.get_active()):
+        execute('-player', str(player_num.get_value_as_int()),
+                '-connect', server_entry.get_text(),
+                *get_level() + common_options())
+    else:
+        execute('-server', str(num_clients.get_value_as_int()),
+                *get_level() + common_options())
+
+
+def get_level():
+    level = []
+    if (mirror.get_active()):
+        level.append('-mirror')
+
+    level.append('-dat')
+    level.append(choosen_level)
+
+    return level
+
+
+def common_options():
+    options = []
+
+    if (fullscreen.get_active()):
+        options.append('-fullscreen')
+    if (nogore.get_active()):
+        options.append('-nogore')
+    if (double_res.get_active()):
+        options.append('-scaleup')
+    if (nosound.get_active()):
+        options.append('-nosound')
+    if (noflies.get_active()):
+        options.append('-noflies')
+    if (withmusic.get_active()):
+        options.append('-musicnosound')
+    if (mirror.get_active()):
+        options.append('-mirror')
+
+    return options
+
+
+def execute(*cmd):
+    try:
+        os.spawnl(os.P_NOWAIT, BINARY_DIR + '/jumpnbump', 'jumpnbump', *cmd)
+    except Exception as err:
+        print(err)
+
+
+def main():
+    global gladefile
+
+    global_gladefile = RESOURCE_DIR + '/jumpnbump_menu.glade'
+    local_gladefile = './jumpnbump_menu.glade'
+
+    if (os.access(global_gladefile, os.R_OK)):
+        gladefile = global_gladefile
+        del local_gladefile
+    elif (os.access(local_gladefile, os.R_OK)):
+        gladefile = local_gladefile
+        del global_gladefile
+    else:
+        print('Could not find the glade file')
+        return 0
+
+    gui = Gtk.Builder()
+    gui.add_from_file(gladefile)
+
+    global about_dialog, choosen_level, standalone, client, server, treeview, \
+        mirror, num_clients, server_entry, player_num, fullscreen, \
+        nogore, double_res, nosound, noflies, withmusic, image
+
+    choosen_level = ''
+    standalone = gui.get_object('standalone')
+    client = gui.get_object('client')
+    server = gui.get_object('server')
+    treeview = gui.get_object('level_treeview')
+    populate_treeview()
+    mirror = gui.get_object('mirror')
+    num_clients = gui.get_object('num_of_clients')
+    server_entry = gui.get_object('server_entry')
+    player_num = gui.get_object('player_num')
+    fullscreen = gui.get_object('fullscreen')
+    nogore = gui.get_object('nogore')
+    double_res = gui.get_object('double_res')
+    nosound = gui.get_object('nosound')
+    noflies = gui.get_object('noflies')
+    withmusic = gui.get_object('withmusic')
+    image = gui.get_object('image')
+    about_dialog = gui.get_object('about')
+    
+    gui.connect_signals({'standalone_mode': standalone_mode,
+                         'client_mode': client_mode,
+                         'server_mode': server_mode,
+                         'level_changed': level_changed,
+                         'quit': lambda *args: Gtk.main_quit(),
+                         'run': run,
+                         'about': about,
+                         'about_ok': about_close,
+                         'about_quit': about_quit})
+
+    Gtk.main()
+
+if __name__ == '__main__':
+    main()

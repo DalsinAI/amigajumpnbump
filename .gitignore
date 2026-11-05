@@ -1,0 +1,19 @@
+# Generic files to ignore
+*~
+.directory
+.DS_Store
+
+# Jump 'n Bump generated files
+*.dll
+*.exe
+*.o
+data/*.gob
+data/jumpbump.dat
+menu/jumpnbump_menu.py
+menu/po/*.mo
+gobpack
+jnbmenu.tcl
+jnbpack
+jnbunpack
+jumpnbump
+sdl.a

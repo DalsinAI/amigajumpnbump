@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Jump 'n Bump
+Comment=Cute multiplayer platform game with exploding fluffy bunnies
+GenericName=Arcade game with bunnies
+Exec=jumpnbump
+Icon=io.gitlab.LibreGames.jumpnbump
+Terminal=false
+Type=Application
+Categories=Game;ArcadeGame;
+Keywords=cute;game;bunnies;rabbits;jump;head;explode;gore;

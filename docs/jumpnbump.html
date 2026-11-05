@@ -1,0 +1,209 @@
+Content-type: text/html; charset=UTF-8
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML><HEAD><TITLE>Man page of Jump 'n Bump</TITLE>
+</HEAD><BODY>
+<H1>Jump 'n Bump</H1>
+Section: Games and Demos (6)<BR>Updated: August 25th, 2002<BR><A HREF="#index">Index</A>
+<A HREF="/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+jumpnbump - Cute multiplayer platform game with bunnies
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+jumpnbump [<B>-dat </B><I>level_path</I>] [<B>-server </B><I>clients_number</I>] [<B>-connect </B><I>hostname</I>] [<B>-player </B><I>number</I>] [<B>-fullscreen</B>] [<B>-nosound</B>] [<B>-musicnosound</B>] [<B>-nogore</B>] [<B>-noflies</B>] [<B>-mirror</B>] [<B>-scaleup</B>] [<B>-v</B>] [<B>-h</B>]
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+You, as a bunny, have to jump on your opponents to make them
+explode. It's a true multiplayer game, you can't play this alone.
+It has network support.
+<A NAME="lbAE">&nbsp;</A>
+<H2>OPTIONS</H2>
+
+<DL COMPACT>
+<DT>-dat <I>level_path</I><DD>
+Load <I>level_path</I> (<I>.dat</I> file) and use it as the level for this game.
+<DT>-server <I>clients_number</I><DD>
+Start as a server waiting on port TCP 11111 and wait for <I>client_numbers</I>
+clients to connect before starting the game.
+<DT>-connect <I>hostname</I><DD>
+Connect (using IP network) to remote server <I>hostname</I>.
+<DT>-player <I>number</I><DD>
+Set the main player to <I>number</I>. Needed for networking.
+<DT>-fullscreen<DD>
+Run Jump 'n Bump in fullscreen mode.
+<DT>-nosound<DD>
+Run Jump 'n Bump without sound.
+<DT>-musicnosound<DD>
+Run Jump 'n Bump with music but no sound effects.
+<DT>-nogore<DD>
+Play without blood, familymode.
+<DT>-noflies<DD>
+Disable flies.
+<DT>-mirror<DD>
+Play with mirrored level.
+<DT>-scaleup<DD>
+Play with doublesize resolution (800x512).
+<DT>-h<DD>
+Print help.
+<DT>-v<DD>
+Print version, compile time and if network code is compiled in.
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>USAGE</H2>
+
+The goal of the game is to jump on the other players. Each rabbit has
+three control keys.
+<DL COMPACT>
+<DT>Player 1 (Dott)<DD>
+Left - Left
+<BR>
+
+Right - Right
+<BR>
+
+Jump - Up
+<DT>Player 2 (Jiffy)<DD>
+Left - A
+<BR>
+
+Right - D
+<BR>
+
+Jump - W
+<DT>Player 3 (Fizz)<DD>
+Left - J
+<BR>
+
+Right - L
+<BR>
+
+Jump - I
+<DT>Player 4 (Mijji)<DD>
+Left - Keypad 4
+<BR>
+
+Right - Keypad 5
+<BR>
+
+Jump - Keypad 8
+<DT>In the game<DD>
+Turn on/off computer play (AI) of bunny 1 - 1
+<BR>
+
+Turn on/off computer play (AI) of bunny 2 - 2
+<BR>
+
+Turn on/off computer play (AI) of bunny 3 - 3
+<BR>
+
+Turn on/off computer play (AI) of bunny 4 - 4
+<BR>
+
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>SECRET CODES</H2>
+
+You can type these while in the game
+<BR>
+
+jetpack - you can fly
+<BR>
+
+pogostick - the bunnies keep jumping
+<BR>
+
+bunniesinspace - gravity is lower, you can jump higher
+<BR>
+
+lordoftheflies - the flies are attracted
+<BR>
+
+bloodisthickerthanwater - water turns to blood
+<A NAME="lbAH">&nbsp;</A>
+<H2>LEVELS</H2>
+
+There are two programs to help you make your own levels: jnbpack and jnbunpack.
+<P>
+
+jnbpack -o /tmp/newlevel.dat &lt;file1&gt; &lt;file2&gt; &lt;file3&gt; etc
+<P>
+
+or you can just put all the files in a dir, cd to that dir and do
+<P>
+
+jnbpack -o /tmp/newlevel.dat *
+<P>
+
+and it will put all the files in the current dir inside the packfile.
+Don't try things like jnbpack -o stuff.dat ../file.c because it will add
+&quot;../file.c&quot; as the filename in the packfile, which won't work.
+<P>
+
+jnbunpack level.dat
+<BR>
+
+will unpack it in the current directory.
+<P>
+
+With gobpack you can convert .gob files (which are sprites, described in
+gob.txt) into .pcx files which you can edit with gimp for example, then
+convert back to a .gob and use it in your own level.
+<P>
+
+gobpack -u font menu.pcx
+<P>
+
+will unpack font.gob using the color palette from menu.pcx and write the
+files font.pcx font.txt. The other gob files should use level.pcx for the
+correct palette.
+<P>
+
+gobpack font
+<P>
+
+will generate font.gob from font.pcx and the specifications in font.txt.
+The .pcx files should be resaved with another program, as they are not
+packed and are thus very large.
+<A NAME="lbAI">&nbsp;</A>
+<H2>AUTHORS</H2>
+
+<P>
+
+Jump 'n Bump is originally a DOS game by Brainchild Design, authored by
+Matthias Brynervall (code), Andreas Brynervall (graphics), Martin Magnusson
+(graphics), and Anders Nilsson (music). It was open sourced under the GPL
+license.
+<P>
+
+The game was ported to Linux using SDL by Chuck Mason, and since then
+received contributions from multiple people. See the AUTHORS file provided
+with the game's documentation for details.
+<P>
+
+This SDL2 port of Jump 'n Bump is maintained by the Libre Games community.
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">OPTIONS</A><DD>
+<DT><A HREF="#lbAF">USAGE</A><DD>
+<DT><A HREF="#lbAG">SECRET CODES</A><DD>
+<DT><A HREF="#lbAH">LEVELS</A><DD>
+<DT><A HREF="#lbAI">AUTHORS</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 18:43:03 GMT, February 10, 2026
+</BODY>
+</HTML>

@@ -1,0 +1,13 @@
+BasedOnStyle:  LLVM
+AlignConsecutiveMacros:                 true
+AlignTrailingComments:                  false
+AllowShortIfStatementsOnASingleLine:    false
+BreakBeforeBraces:                      Linux
+ColumnLimit:                            0
+IndentCaseLabels:                       true
+IndentPPDirectives:                     None
+IndentWidth:                            4
+SortIncludes:                           true
+SpaceAfterCStyleCast:                   true
+TabWidth:                               4
+UseTab:                                 ForContinuationAndIndentation

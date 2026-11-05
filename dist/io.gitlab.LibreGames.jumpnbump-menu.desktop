@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Jump 'n Bump Menu
+Comment=Level selection and config menu for the Jump 'n Bump game
+GenericName=Launcher for Jump 'n Bump
+Exec=jumpnbump-menu
+Icon=io.gitlab.LibreGames.jumpnbump
+Terminal=false
+Type=Application
+Categories=Game;ArcadeGame;
+Keywords=cute;game;bunnies;rabbits;jump;head;explode;gore;
