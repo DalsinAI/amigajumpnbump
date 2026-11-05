@@ -2763,11 +2763,14 @@ void write_calib_data(void)
 	fread(mem, 1, len, handle);
 	fclose(handle);
 
+	/* The directory is little-endian (as dat_open() reads it), whatever
+	 * the machine. */
 	ofs = 4;
-	num = *(int *) (&mem[0]);
+	num = (unsigned char) mem[0] | ((unsigned char) mem[1] << 8) | ((unsigned char) mem[2] << 16) | ((unsigned char) mem[3] << 24);
 	for (c1 = 0; c1 < num; c1++) {
 		if (strnicmp(&mem[ofs], "calib.dat", strlen("calib.dat")) == 0) {
-			ofs = *(int *) (&mem[ofs + 12]);
+			unsigned char *p = (unsigned char *) &mem[ofs + 12];
+			ofs = p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
 			break;
 		}
 		ofs += 20;

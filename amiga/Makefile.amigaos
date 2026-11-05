@@ -1,0 +1,99 @@
+# Jump 'n Bump for AmigaOS 3.x, 68040/68060 + FPU, on OpenGPU's SDL 2.
+#
+#   make -f amiga/Makefile.amigaos -j2 \
+#        STOVE=/path/to/openamigagcc-16.2.0-open4 \
+#        NDK=/path/to/OpenNDK/Include_H SDL2KIT=/path/to/opengpu-sdk
+#
+# STOVE is GFOpenAmigaGCC 16.2.0-open4 or later. SDL2KIT is the OpenGPU
+# developer kit: libSDL2.a and libSDL2_mixer.a, the program's halves of
+# LIBS:OpenGPU/SDL2.module and SDL2_mixer.module (screen, keys, pads,
+# sound and the MOD music). No SDL_net (network play off), no zlib or bzip2
+# (the game reads its plain jumpbump.dat).
+#
+# jumpbump.dat is packed from upstream's data/ (GPL 2 or later, as the
+# game) with upstream's own gobpack and jnbpack, built for the build
+# machine with HOSTCC: the file format is little-endian on every machine.
+# 'make ... dist' makes the drawer dist/JumpnBump (+ dist/JumpnBump.info).
+
+STOVE   ?= $(HOME)/CradleLab/toolchain/openamigagcc-16.2.0-open4-x86_64-linux
+NDK     ?= $(HOME)/CradleLab/gfopensdk/OpenNDK/Include_H
+SDL2KIT ?= /mnt/amigachrome/team2/deps/opengpu-sdk
+CC      = $(STOVE)/bin/m68k-amigaos-gcc
+HOSTCC  ?= cc
+CPU     ?= -m68040 -m68881
+# -fno-tree-loop-distribute-patterns: GCC 16's loop miscompile (the kit's
+# sdl2-config gives it for GCC 16 too).
+OPT     ?= -O2 -fomit-frame-pointer -fno-tree-loop-distribute-patterns -ffast-math
+
+# As upstream's Makefile, without USE_NET, ZLIB_SUPPORT and BZLIB_SUPPORT.
+DEFS    = -D__amigaos__ -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp -DNDEBUG -DUSE_SDL
+INC     = -I. -I$(SDL2KIT)/include/SDL2
+CFLAGS  = -noixemul $(OPT) $(CPU) -fno-common $(DEFS) $(INC)
+LDFLAGS = -noixemul $(CPU)
+LIBS    = -L$(SDL2KIT)/lib -lSDL2_mixer -lSDL2 -lm
+
+BUILD   = build/amigaos
+OBJDIR  = $(BUILD)/obj
+PROG    = JumpnBump
+OUT     = dist/JumpnBump
+
+SRC     = main.c menu.c filter.c network.c \
+          sdl/gfx.c sdl/interrpt.c sdl/sound.c sdl/input.c
+OBJS    = $(SRC:%.c=$(OBJDIR)/%.o) \
+          $(OBJDIR)/amiga/amiga_screens.o $(OBJDIR)/amiga/stack.o
+
+GOBS    = font numbers objects rabbit
+# Upstream's data/Makefile list, in its order.
+DATAFILES = bump.mod calib.dat death.smp fly.smp jump.mod \
+	jump.smp levelmap.txt level.pcx mask.pcx menu.pcx \
+	menumask.pcx $(GOBS:%=%.gob) scores.mod splash.smp spring.smp
+
+ICONS   = $(wildcard amiga/icons/*.info)
+
+all: $(BUILD)/$(PROG) $(BUILD)/jumpbump.dat
+
+$(BUILD)/$(PROG): $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+
+$(OBJDIR)/amiga/%.o: amiga/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -I$(NDK) -Wall -Wextra -c -o $@ $<
+
+$(OBJDIR)/%.o: %.c globals.h
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# The data, packed on the build machine.
+$(BUILD)/host/gobpack: modify/gobpack.c
+	@mkdir -p $(dir $@)
+	$(HOSTCC) -O2 -I. -o $@ $<
+
+$(BUILD)/host/jnbpack: modify/jnbpack.c
+	@mkdir -p $(dir $@)
+	$(HOSTCC) -O2 -I. -o $@ $<
+
+$(BUILD)/jumpbump.dat: $(BUILD)/host/gobpack $(BUILD)/host/jnbpack $(wildcard data/*)
+	rm -rf $(BUILD)/data && mkdir -p $(BUILD)/data && cp data/* $(BUILD)/data/
+	cd $(BUILD)/data && for g in $(GOBS); do $(CURDIR)/$(BUILD)/host/gobpack $$g; done
+	cd $(BUILD)/data && $(CURDIR)/$(BUILD)/host/jnbpack -o jumpbump.dat $(DATAFILES)
+	cp $(BUILD)/data/jumpbump.dat $@
+
+dist: $(BUILD)/$(PROG) $(BUILD)/jumpbump.dat $(ICONS) AMIGA_PORT.md COPYING AUTHORS README.md
+	rm -rf $(OUT) && mkdir -p $(OUT)
+	cp $(BUILD)/$(PROG) $(BUILD)/jumpbump.dat $(OUT)/
+	cp AMIGA_PORT.md $(OUT)/ReadMe
+	cp README.md $(OUT)/README-jumpnbump
+	cp COPYING $(OUT)/COPYING.txt
+	cp AUTHORS $(OUT)/AUTHORS
+	cp amiga/icons/JumpnBump.info amiga/icons/ReadMe.info $(OUT)/
+	cp amiga/icons/ReadMe.info $(OUT)/README-jumpnbump.info
+	cp amiga/icons/ReadMe.info $(OUT)/COPYING.txt.info
+	cp amiga/icons/ReadMe.info $(OUT)/AUTHORS.info
+	cp amiga/icons/JumpnBump-drawer.info dist/JumpnBump.info
+
+objs: $(OBJS)
+
+clean:
+	rm -rf $(BUILD) $(OUT) dist/JumpnBump.info
+
+.PHONY: all dist objs clean
