@@ -62,7 +62,13 @@ typedef struct {
 channel_info_t channelinfo[MAX_CHANNELS];
 
 /* Sample rate in samples/second */
+#ifdef __amigaos__
+/* Half the PC's rate: the effects are mixed by the game itself, on the
+ * 68040, in SDL_mixer's post-mix callback (32 channels per sample frame). */
+int audio_rate = 22050;
+#else
 int audio_rate = 44100;
+#endif
 int global_sfx_volume = 0;
 /*
 // This function loops all active (internal) sound
@@ -271,7 +277,9 @@ char dj_init(void)
 	Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);
 	printf("Opened audio at %dHz %dbit %s, %d bytes audio buffer\n", audio_rate, (audio_format & 0xFF), (audio_channels > 1) ? "stereo" : "mono", audio_buffers);
 
+#ifndef __amigaos__
 	Mix_SetMusicCMD(getenv("MUSIC_CMD"));
+#endif
 
 	Mix_SetPostMix(mix_sound, NULL);
 #else
@@ -498,7 +506,21 @@ char dj_ready_mod(char mod_num)
 		return 0;
 	}
 
-#ifdef _MSC_VER
+#ifdef __amigaos__
+	/* No /tmp and no mkstemp(): the song is read straight from the loaded
+	 * jumpbump.dat (which stays in memory for the whole run); a temporary
+	 * file in T: only if SDL2_mixer.module can't read from memory. */
+	(void) tmp_fd;
+	current_music = Mix_LoadMUS_RW(SDL_RWFromConstMem(fp, len), 1);
+	if (current_music)
+		return 0;
+	filename = strdup("T:jumpnbump.mod");
+	tmp = fopen(filename, "wb");
+	if (tmp) {
+		fwrite(fp, len, 1, tmp);
+		fclose(tmp);
+	}
+#elif defined(_MSC_VER)
 	// FIXME: Implement safe temporary files for MSVC (needs alternative for mkstemp)
 	filename = strdup("jnb.tmpmusic.mod");
 	tmp = fopen(filename, "wb");

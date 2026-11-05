@@ -57,6 +57,30 @@ static int background_drawn;
 static void *mask = NULL;
 static int dirty_blocks[2][25 * 16 * 2];
 
+#ifdef __amigaos__
+/* OpenGPU's SDL2.module reports a 24-bit window; the game asks for its own
+ * 32-bit XRGB picture and converts each frame into it (one surface kept for
+ * the whole run instead of one allocated per frame). See amiga/amiga_screens.c
+ * for the screens the module leaves behind. */
+static SDL_Surface *rgb_surface;
+#define JNB_FULLSCREEN SDL_WINDOW_FULLSCREEN
+void amiga_screens_snapshot(void);
+void amiga_screens_close_leftovers(void);
+static void amiga_quit(void)
+{
+	/* atexit() runs last in, first out: SDL goes first (exit() without
+	 * SDL_Quit() is common in the game, and -nosound skips it), then the
+	 * screens it left. */
+	SDL_Quit();
+	amiga_screens_close_leftovers();
+}
+#else
+/* SDL_WINDOW_FULLSCREEN_DESKTOP on the Amiga would be the Workbench's size,
+ * often far more than a 68040 can fill: there the game opens a screen of its
+ * own in the size it draws. */
+#define JNB_FULLSCREEN SDL_WINDOW_FULLSCREEN_DESKTOP
+#endif
+
 static SDL_Surface *load_xpm_from_array(char **xpm)
 {
 #define NEXT_TOKEN                          \
@@ -178,6 +202,10 @@ void open_screen(void)
 	int lval = 0;
 	int flags;
 
+#ifdef __amigaos__
+	amiga_screens_snapshot();
+	atexit(amiga_quit);
+#endif
 	lval = SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK);
 	if (lval < 0) {
 		fprintf(stderr, "SDL ERROR: %s\n", SDL_GetError());
@@ -186,7 +214,7 @@ void open_screen(void)
 
 	flags = SDL_WINDOW_RESIZABLE;
 	if (fullscreen)
-		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+		flags |= JNB_FULLSCREEN;
 	SDL_CreateWindowAndRenderer(screen_width, screen_height, flags, &sdlWindow, &sdlRenderer);
 
 	if (!sdlWindow || !sdlRenderer) {
@@ -206,6 +234,13 @@ void open_screen(void)
 		fprintf(stderr, "SDL ERROR: %s\n", SDL_GetError());
 		exit(EXIT_FAILURE);
 	}
+#ifdef __amigaos__
+	rgb_surface = SDL_CreateRGBSurfaceWithFormat(0, screen_width, screen_height, 32, SDL_PIXELFORMAT_RGB888);
+	if (!rgb_surface) {
+		fprintf(stderr, "SDL ERROR: %s\n", SDL_GetError());
+		exit(EXIT_FAILURE);
+	}
+#endif
 
 	if (fullscreen)
 		SDL_ShowCursor(0);
@@ -242,7 +277,7 @@ void fs_toggle()
 		fullscreen ^= 1;
 		return;
 	}
-	if (SDL_SetWindowFullscreen(sdlWindow, (fullscreen ? 0 : SDL_WINDOW_FULLSCREEN_DESKTOP)) == 0)
+	if (SDL_SetWindowFullscreen(sdlWindow, (fullscreen ? 0 : JNB_FULLSCREEN)) == 0)
 		fullscreen ^= 1;
 	else
 		fprintf(stderr, "SDL ERROR: %s\n", SDL_GetError());
@@ -376,9 +411,15 @@ void flippage(int page)
 	memset(&dirty_blocks[page], 0, sizeof(int) * 25 * 16);
 	SDL_UnlockSurface(jnb_surface);
 
+#ifdef __amigaos__
+	(void) surface;
+	SDL_BlitSurface(jnb_surface, NULL, rgb_surface, NULL);
+	SDL_UpdateTexture(jnb_texture, NULL, rgb_surface->pixels, rgb_surface->pitch);
+#else
 	surface = SDL_ConvertSurfaceFormat(jnb_surface, SDL_PIXELFORMAT_RGB888, 0);
 	SDL_UpdateTexture(jnb_texture, NULL, surface->pixels, screen_width * sizeof(Uint32));
 	SDL_FreeSurface(surface);
+#endif
 	SDL_RenderClear(sdlRenderer);
 	SDL_RenderCopy(sdlRenderer, jnb_texture, NULL, NULL);
 	SDL_RenderPresent(sdlRenderer);

@@ -62,6 +62,11 @@ void processMovePacket(NetPacket *pkt);
 
 void tellServerPlayerMoved(int playerid, int movement_type, int newval);
 
+/* Also without USE_NET: local games use them too. */
+void serverSendKillPacket(int killer, int victim);
+
+void processKillPacket(NetPacket *pkt);
+
 #ifdef USE_NET
 
 extern TCPsocket sock;
@@ -102,8 +107,6 @@ void tellServerGoodbye(void);
 
 void tellServerNewPosition(void);
 
-void processKillPacket(NetPacket *pkt);
-
 void processPositionPacket(NetPacket *pkt);
 
 void processAlivePacket(NetPacket *pkt);
@@ -113,8 +116,6 @@ void serverTellEveryoneGoodbye(void);
 int update_players_from_server(void);
 
 void serverSendAlive(int playerid);
-
-void serverSendKillPacket(int killer, int victim);
 
 void update_players_from_clients(void);
 

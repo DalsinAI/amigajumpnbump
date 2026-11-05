@@ -160,7 +160,9 @@ extern int ai[JNB_MAX_PLAYERS];
 #define BAN_ICE    3
 #define BAN_SPRING 4
 
-#ifdef GAMEDATADIR
+#if defined(__amigaos__)
+#define DATA_PATH "PROGDIR:jumpbump.dat"
+#elif defined(GAMEDATADIR)
 #define DATA_PATH GAMEDATADIR "/jumpnbump/jumpbump.dat"
 #else
 #define DATA_PATH "data/jumpbump.dat"

@@ -17,3 +17,9 @@ jnbpack
 jnbunpack
 jumpnbump
 sdl.a
+
+# Amiga port build
+build/
+# Amiga port: the game drawer made by amiga/Makefile.amigaos dist
+/dist/JumpnBump
+/dist/JumpnBump.info
