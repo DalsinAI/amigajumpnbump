@@ -9,7 +9,10 @@
     {
       "file": "JumpnBump.info",
       "kind": "tool",
-      "stack": 131072
+      "stack": 131072,
+      "toolTypes": [
+        "(FULLSCREEN)"
+      ]
     },
     {
       "file": "ReadMe.info",
