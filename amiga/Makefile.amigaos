@@ -82,6 +82,7 @@ dist: $(BUILD)/$(PROG) $(BUILD)/jumpbump.dat $(ICONS) AMIGA_PORT.md COPYING AUTH
 	rm -rf $(OUT) && mkdir -p $(OUT)
 	cp $(BUILD)/$(PROG) $(BUILD)/jumpbump.dat $(OUT)/
 	cp AMIGA_PORT.md $(OUT)/ReadMe
+	cp amiga/Controls $(OUT)/Controls
 	cp README.md $(OUT)/README-jumpnbump
 	cp COPYING $(OUT)/COPYING.txt
 	cp AUTHORS $(OUT)/AUTHORS
